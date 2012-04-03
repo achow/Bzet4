@@ -1,0 +1,477 @@
+2012-01-30 Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Integrated collapsing in _binop
+             Resizing now uses a buffer that scales by 2 whenever realloc'd
+
+2012-01-18 Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Bugfix in _binop
+             Bugfix in subtreeNot
+
+2012-01-06 Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Call to collapse in binop is now conditional on whether or
+             not the resulting Bzet4 of _binop is collapsible
+
+2011-12-16 Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Significantly increased performance by precomputing steps
+
+2011-12-13 Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Everything is fully functioning
+             added functionality for validation of operations in debug mode
+
+2011-12-12 Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: binop rewritten to properly evaluate level 1 data
+             collapse now works with saturated nodes and on level 1 data
+             collapse now works with empty nodes
+
+2011-12-10 Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Redid normalize, copy contructor, firstBit, lastBit, normalize, 
+             align, buildDepth, stepThrough, printBzet, subtreeNot, operator~
+             to properly evaluate a Bzet4 with level 1 as the lowest level
+
+2011-12-02	Jay Topiwala <jcptopi@ucla.edu>
+* help.txt:			fixed help file for create command so that it no longer said
+						compress incorrectly while listing command templates.
+
+2011-11-28 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp Fixed various bugs
+	  Adjusted some error messages to be more specific
+
+2011-11-27	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Fixed default constructor so that memory is allocated for
+						m_words.  getIndexOf can still be called on it, so the
+						array must still be initialized.
+					Fixed getIndexOf to return the proper Bzet after creating a
+						new word.
+					Changed addWord to return the position of the inserted word.
+					Fixed addWord to avoid making shiftWords shift things off the
+						end of the array.
+					Defined checkOrder to check that the sorting works correctly for
+						m_words.
+					Defined testWordIndexClass.
+					Defined checkWordsForWordIndex.
+					Defined verifyWordConsistency.
+					Defined verifyWord.
+* WordIndex.h:		Added member function declaration for checkOrder.
+					Changed return type for addWord.
+					Added declaration for checkWordsForWordIndex.
+					Added declaration for verifyWordConsistency.
+					Added declaration for verifyWord.
+
+2011-11-27 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp: Added help command
+
+2011-11-27 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp: Added new functionality to the create and set commands
+	   Added xor command
+	   Added some functionality to string together commands
+	   Added more checks for invalid arguments
+
+2011-11-26  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Rewrote do_op to work with all binary operations
+
+2011-11-26	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Included cassert, for testing purposes.
+					Changed constructors to take line length arguments when
+						needed, and to initialize m_charsperline.
+					Changed buildFromStream to use m_charsperline instead of
+						WORDINDEX_MAXCHARSPERLINE.
+					Updated getText to insert a newline character when
+						appropriate, based on m_charsperline.  Restructured
+						function to avoid unnecessary steps in the loop.
+					Updated cloneFromStream to copy m_charsperline from cloned
+						WordIndex object.
+					Added stub for testWordIndexClass that exists only if
+						WORDINDEX_TESTING is defined, to be used to run tests.
+						Currently it is incomplete.
+* WordIndex.h:		Added arguments/default values to constructors for
+						specifying line length
+					Added m_charsperline member variable.
+					Added external function testWordIndexClass that exists only
+						if WORDINDEX_TESTING is defined, to be used to run tests.
+
+2011-11-26	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.cpp:	Implemented a binary search function for finding words
+					Implemented a function for adding new words in alphabetical
+						order to m_words
+					Implemented helper function for adding new words
+* WordIndex.h:		Added a binary search function for finding words
+					Added a function and helper functions for adding new words
+					Added a new macro for a failed search
+
+2011-11-25  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Fixed a bug in lastBit
+             Switched order of collapsing and calculating depth in binop
+             Fixed bug in at
+             Fixed subtreeNot
+             Made binop a public method
+             Changed binop call to be similar to logical operators
+* Bzet4.h: Added more enums for OP
+* PyBzet4.cpp: LIST_T now correctly returns as a python list
+
+2011-11-25  Trisha Liao <trcliao@ucla.edu>
+* Bzet4.cpp, Bzet4.h: Rewrote code for operations
+
+2011-11-14  Alex Chow  <achow.tk@gmail.com>
+* PyBzet4.cpp: Added support for indexing (operator[])
+               Added NOT
+* Bzet4.cpp: Fixed up some comments and error messages
+
+2011-11-24  Trisha Liao <trcliao@ucla.edu>
+* Bzet4.cpp, Bzet4.h: Changed how operations were done
+
+2011-11-21  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Added subtreeNot for use with binop
+
+2011-11-20 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp: Fully separated bzet and wordindex operations into separate functions
+	   Implemented getindex command of wordindex
+
+2011-11-19 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp: Created a new struct to hold bzets and wordindex arrays
+           Started to separate do_command_line into multiple functions
+
+2011-11-18 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp, Bzet4.h: Changed int types to long long
+
+2011-11-18  Alex Chow <achow.tk@gmail.com>
+* PyBzet4.h, PyBzet4.cpp: Created and implemented wrapper for Python interface
+                          for call consistency
+                          NOTE: no documentation
+
+2011-11-16 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp: Fixed an error in AND
+*Bzet4.h: Changed some function names
+
+2011-11-13	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.cpp:	Changed functions to use Bzet4 instead of vectors to represent line
+						numbers.
+* WordIndex.h:		Changed functions and Words struct to use Bzet4 instead of vectors.
+					Added exitOnError prototype.
+
+2011-11-13 Trisha Liao <trcliao@ucla.edu>
+*Bzet4. cpp: Fixed an error in unset and AND
+
+2011-11-12 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp: Separated the code to execute the commands into a separate function
+           Some minor code cleanup
+
+2011-11-11 Alex Chow <achow.tk@gmail.com>
+* Bzet4.h, Bzet4.cpp: Retyped int64_t with long long for compatibility with SWIG
+                      Made operator helper functions private
+                      Added error handling to loadBzet and Bzet4(void*, int) for
+                        null pointers
+                      BUG: Constructors with two parameters causes ambiguity when
+                           first parameter is 0 (uses Bzet4(void*, int))
+
+2011-11-10 Alex Chow <achow.tk@gmail.com>
+* Error.h: Created routine for displaying errors
+* Bzet4.cpp: Added error handling for resize, firstBit, and lastBit
+
+2011-11-09 Trisha Liao <trcliao@ucla.edu>
+* Bzet4.cpp: Fixed the depth for AND, OR, XOR
+* Bzet4.h: Added functions that help determine the depth
+
+2011-11-08 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp  Implemented commands to print out a line or the entire text of WordIndex
+	   Partially implemented command to print out bzet of a word in WordIndex
+
+2011-11-08 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp  Added some WordIndex functionality
+	   User can now create blank WordIndex and from file           
+* CLI.h	   Added a structure and functions to support creating WordIndex
+
+2011-11-07 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp: Nodes with only zeroes should now be empty nodes.
+
+2011-11-07 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp  The command to read in a data file and convert to bzet now works
+           Added & and == operators to commands
+
+2011-11-06 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp: Added XOR. Added normalize to AND, OR, XOR, and NOT. Fixed and
+error in collapse. Added the == operator. 
+*Bzet4.h: Added XOR and ==.
+
+2011-11-05 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp: Fixed an error in collapse. Added binop for general binary
+operations. Fixed OR and added AND.
+*Bzet4.h: Added binop
+
+2011-11-05 Hemming Leo <hleo@ucla.edu>
+* CLI.cpp	Updated the CLI so it now can accept an arbitrary number of
+                arguments and can create an arbitrary number of bzets
+* CLI.h		Added function used for above change
+
+2011-11-05 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp: Fixed an error in collapse
+
+2011-11-04	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Implemented exitOnError to have a uniform error handling solution.
+					Removed allocateMemory, since it's no longer needed.
+					Removed reallocateMemory, since it's no longer needed.
+					Changed all functions to us malloc/realloc instead, and handle 
+                        errors with exitOnError.
+* WordIndex.h:		Added exitOnError prototype.
+					Removed allocateMemory prototype.
+					Removed reallocateMemory prototype.
+
+2011-11-04  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Created and implemented a Bzet4 constructor from literal bitstrings
+             Created and implemented private loadBzet function
+
+2011-11-04	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Changed all related functions to treat m_words and m_lines as
+						dynamic arrays of pointers to objects instead of dynamic
+						arrays of objects, so that member objects do not move while
+						WordIndex object still exists, even if the array is reallocated.
+* WordIndex.h:		Changed type of m_words from Word* to Word**.
+					Changed type of m_liness from std::string* to std::string**.
+
+2011-11-04 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp: Added collapse function to collapse the appropriate data nodes and
+OR now collapses them. Fixed errors in OR.
+
+2011-11-04	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Fixed profoundly ugly memory management error.  Program can
+						now successfully parse the bible.
+
+2011-11-03  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Fixed the OR operator to work properly on empty Bzets
+             Created and implemented setRange function
+             Implemented range constructor
+
+2011-11-03 Trisha Liao <trcliao@ucla.edu>
+*Bzet4.cpp: Added turn_off_tree_bits function that turns off a tree bit and
+turns on a data bit and the moving function that overwrites a node and shifts
+everything over
+*Bzet4.h: Added the above functions
+
+2011-11-02  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: _printBzet now prints full Bzet correctly
+
+2011-11-02 Trisha Liao <trcliao@ucla.edu>
+* Bzet4.cpp: Added parent_node function that finds the parent node of a given child node
+*Bzet4.h: Added the parent_node function
+
+2011-11-02  Alex Chow <achow.tk@gmail.com
+* Bzet4.cpp: Modified _printBzet to output nibbles in uppercase for consistency
+             depthAt now works correctly
+
+2011-11-01  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Created and implemented bitwise not operator
+             Fixed alignment of output from _printBzet
+
+2011-11-01	Trisha Liao <trcliao@ucla.edu>
+*Bzet.h: Added OR helper functions
+*Bzet.cpp: Fixed OR. 
+	Modified the copy constructor and equal operator.
+    
+2011-11-1	Hemming Leo <hleo@ucla.edu>
+* CLI.cpp	Added functionality for an interactive session for the user
+		Reworked main() to better support the above change
+		Added commands to let user import and save data files and bzet files
+		Change uses of c strings to Strings for better consistency
+* CLI.h		Updated function prototypes to reflect changes
+		Added find_bzet function and bzet_file struct to support interactive session
+
+2011-10-31	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Clarified documentation for allocateMemory and reallocateMemory
+
+2011-10-31	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Moved macro MAXCHARSPERLINE to header
+					Changed references to MAXCHARSPERLINE to WORDINDEX_MAXCHARSPERLINE
+					Implemented allocateMemory
+					Implemented reallocateMemory
+					Retooled functions so that all allocation/reallocation goes through
+						the above two functions
+					Memory reallocation now uses macro WORDINDEX_RESIZEFACTOR when 
+                        calculating the new size of the array
+* WordIndex.h:		Renamed MAXCHARSPERLINE to WORDINDEX_MAXCHARSPERLINE
+					Added macro WORDINDEX_RESIZEFACTOR to represent the resize factor
+						when reallocating memory for an array (2)
+					Added allocateMemory prototype
+					Added reallocateMemory prototype
+
+2011-10-31	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.cpp:	Added a few more comments to make code easier to understand and read
+					Added a macro MAXCHARSPERLINE to represent the maximum number of
+						characters per line (100).
+					Replaced instances of 100 and 101 with MAXCHARSPERLINE and
+						(MAXCHARSPERLINE + 1) respectively.
+					Moved loop variable declaration in destroyData and cloneWordIndex
+						inside of the for loops.
+
+2011-10-31  Alex Chow <achow.tk@gmail.com>
+* Bzet4.h:
+* Bzet4.cpp: Changed uint64_t type to int64_t and modified special return values 
+             accordingly
+
+2011-10-31	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Implemented destroyData
+					Changed destructor to utilize destroyData
+* WordIndex.h:		Added destroyData prototype
+
+
+2011-10-31	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.h:	Added copy constructor prototype
+					Added operator= prototype
+					Added cloneWordIndex prototype
+					Removed const modifier from getLine return type
+					Removed const modifier from getText return type
+* WordIndex.cpp:	Implemented copy constructor
+					Implemented operator=
+					Implemented cloneWordIndex to assist the above two functions
+					Removed const modifier from getLine return type
+					Removed const modifier from getText return type
+
+2011-10-31	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.cpp:	Added const modifier to getText
+					Added const modifier to getLine
+* WordIndex.h:		Added const modifier to getText
+					Added const modifier to getLine
+
+2011-10-31	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.cpp:	Fixed an error in getText() that prevented the function from obtaining
+						the last line of text.
+
+2011-10-31	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Corrected ~WordIndex to avoid memory leak
+
+2011-10-31	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.cpp:	Implemented a getLine(linenumber) function for WordIndex that
+						returns a line from m_text corresponding to linenumber
+					Implemented a getText() function for WordIndex that returns
+						the entire text stored in WordIndex
+* WordIndex.h:		Added getLine prototype
+					Added getText prototype
+
+2011-10-31	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Corrected getIndexOf, seems to work fine now, but more testing is needed
+
+2011-10-31	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Implemented buildFromStream, changed constructors to use them
+					Corrected dynamic memory management statements for syntax and logic
+* WordIndex.h:		Created buildFromStream to assist in reusing code for the two constructors
+					Added TODO: comments for missing constructor types
+
+2011-10-30	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Fixed syntax and logic errors to allow for successful compilation
+					Fixed include statements.
+* WordIndex.h:		Cleaned up files to allow for successful compilation.
+					Removed private helper function for constructor, consolidated into one function.
+					Fixed include statements.
+
+2011-10-30	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Took care of all CHECK: comments Nico made previously
+
+2011-10-30	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.cpp:	Fixed text-based constructor to hand straddling words
+					Added a few more comments to attempt to clarify the constructors
+					Added a few possible changes to loops and conditions as comments
+						marked by //CHECK:
+
+2011-10-30	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Changed file-based constructor to account for words that straddle a line
+					break
+
+2011-10-30	Jay Topiwala <jcptopi@ucla.edu>
+* Bzet4.h:			Changed include guard to keep format the same for all.
+* CLI.h:			Added include guard.
+* WordIndex.cpp:	Renamed m_text to m_lines, for clarity.
+* WordIndex.h:		Renamed m_text to m_lines, for clarity.
+
+2011-10-30	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.h:		Changed instances of Bzet4 and Bzet4* to vector<unsigned int> for testing
+						purposes
+					Added vector library
+* WordIndex.cpp:	Added vector library
+					Changed instances of Bzet4 and Bzet4* to vector<unsigned int> for testin
+						purposes
+					Added additional comments to further explain code in createLinesFromText
+					Added length parameter to createLinesFromText function to help estimate
+						the amount of memory to allocate to m_text
+					Removed superfulous variables, instead modifying the private member
+						variables directly in createLinesFromText
+					Cleaned up createLinesFromText implementation
+
+2011-10-30	Jay Topiwala <jcptopi@ucla.edu>
+* WordIndex.cpp:	Fixed mistakes in file-based constructor and getIndexOf, and cleaned
+					up algorithm in the latter as well.
+
+2011-10-29  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Fixed printBzet to properly display multiple data nodes
+
+2011-10-29	Jay Topiwala <jcptopi@ucla.edu>
+* Bzet4.cpp:		Tagged final constructor with a TODO comment -- needs to be implemented
+* WordIndex.cpp:	Implemented constructor based on file path
+					Added memory allocation/reallocation code for m_words
+* WordIndex.h:		Removed completed TODO: statements
+
+2011-10-29	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.h:		Added include guards for header file
+					Added m_maxwords to private member variables
+					Added m_numofwords to private member variables
+* WordIndex.cpp:	Fleshed out getIndexOf function
+					Marked unfinished functions with //TODO: comments
+
+2011-10-29	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.h:		Added createLinesFromText private helper function for constructor
+					Added unsigned int m_numoflines private member variable
+* WordIndex.cpp:	Implemented createLinesFromText function
+
+2011-10-29  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Created and implemented count function
+
+2011-10-29	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.h:		Changed some inputs to be const
+					Added another WordIndex constructor for text files (unfinished)
+					Changed all instances of cstrings to C++ strings
+* WordIndex.cpp:	Changed some inputs to be const
+					Added another WordIndex constructor for text files (unfinished)
+					Changed all instances of cstrings to C++ strings
+                    
+2011-10-29	Nico Guiton	<nico.college@gmail.com>
+* WordIndex.h:		Added prototypes for WordIndex constructor and getIndexOf functions
+					Added and implemented Word struct
+* WordIndex.cpp:	Implemented WordIndex constructor
+					Implemented dummy getIndexOf function
+
+2011-10-28  Alex Chow <achow.tk@gmail.com>
+* Bzet4.h:   Added prototypes for bitwise operators
+* Bzet4.cpp: Created and implemented empty function
+             Created and implemented firstBit function
+             Fixed constructor for bit = 0 and printBzet for an empty Bzet
+             Fixed _printBzet to work with Bzets containing multiple data nodes
+             Added debug constructor
+             Created and implemented depthAt function
+             Created and implemented stepThrough function
+             Created lastBit function
+             Implemented lastBit function
+
+2011-10-27  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Created and implemented normalize function
+
+2011-10-26  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Created and implemented printBzet function
+                 Added explicit offset (user can specify standard offset of all lines)
+                 Now adds a newline at the end
+                 Hid implementation of printBzet as a private method
+                 Reversed order of visiting tree nodes (corrected)
+                 Changed order of parameters (standard offset before file descriptor)
+
+2011-10-25  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Changed everything so that level 0 does not count in depth
+             Redid resize functionality to resize to specified number of bytes.
+             Created and implemented copy constructor
+             Created and implemented assignment operator
+             Created and implemented dust function
+             Created and implemented align function
+             Retyped m_bzet to unsigned char* for uniformity
+
+2011-10-24  Alex Chow <achow.tk@gmail.com>
+* Bzet4.cpp: Implemented Bzet4 contructor that takes one argument
+             Implemented function to retrieve Bzet as hex string
+
+2011-10-23  Alex Chow <achow.tk@gmail.com>
+
+* Bzet4.h:   Created Bzet4 header
+* Bzet4.cpp: Implemented default Bzet4 constructor and functions resize, clear
