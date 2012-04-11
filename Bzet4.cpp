@@ -32,14 +32,14 @@ const ACTION Bzet4::optable[64] = {
      // 0    1    2    3   
 
 #if (defined _DEBUG || defined DEBUG)
-void Bzet4::validateBzet(int loc, int lev) {
+void Bzet4::validateBzet(size_t loc, int lev) {
     if (!lev)
         lev = m_bzet[0];
 
     if (lev == 1)
         return;
 
-    int nextLoc = loc;
+    size_t nextLoc = loc;
     for (int i = 3; i >= 0; --i) {
         if ((m_bzet[loc] >> i) & 1) {
             bool check = nextLoc + 1 >= 0 && nextLoc < m_size;
@@ -50,22 +50,16 @@ void Bzet4::validateBzet(int loc, int lev) {
             }
             assert(nextLoc + 1 >= 0 && nextLoc < m_size);
             validateBzet(nextLoc + 1, lev - 1);
-            nextLoc = stepThrough(nextLoc + 1, lev - 1) - 1;
+            nextLoc = stepThrough(nextLoc + 1) - 1;
         }
     }
 
-    bool check = dust(m_bzet[loc]) == m_bzet[loc];
+    bool check = (dust(m_bzet[loc]) == m_bzet[loc]);
     if (!check)
         printf("assert failed at loc = %d, lev = %d\n", (int) loc, lev);
     assert(check);
     
     for (int i = 1; i < m_size; ++i) {
-        /*bool test = m_step[i] == do_step(i);
-        if (!test) {
-            printf("assertion failed, i = %d, m_step[i] = %d, do_step[i] = %d\n", i, m_step[i], do_step(i));
-            dump();
-        }*/
-
         bool test = (m_step[i] > 0 && m_step[i] <= m_size);
         if (!test) {
             printf("assertion failed, i = %d, m_step[i] = %d\n", i, m_step[i]);
@@ -144,14 +138,14 @@ Bzet4::Bzet4(const Bzet4& src) {
  *  Purpose:       Constructor for Bzet4. Initializes a Bzet4 with bit bit 
  *                 turned on
  *
- *  Inputs:        long long bit: What bit to turn on
+ *  Inputs:        int64_t bit: What bit to turn on
  *  Return values: None
  * 
  *  Author:        Alex Chow
  *  Date:          10/23/2011
  *
  *****************************************************************************/
-Bzet4::Bzet4(long long bit) {
+Bzet4::Bzet4(int64_t bit) {
     init();
 
     if (bit < 0)
@@ -160,10 +154,10 @@ Bzet4::Bzet4(long long bit) {
     //build depth
     int depth = 1;
 
-    long long tempbit = bit;
+    int64_t tempbit = bit;
     //level 1 holds 16 bits, numbers 0 to 15
     while (tempbit > 15) {
-        tempbit /= (long long) NODE_ELS;
+        tempbit /= (int64_t) NODE_ELS;
         ++depth;
     }
 
@@ -206,15 +200,15 @@ Bzet4::Bzet4(long long bit) {
  *  Purpose:       Constructor for Bzet4. Initializes a Bzet4 with len bits 
  *                 turned on, starting from startbit.
  *
- *  Inputs:        long long startbit: Starting bit to turn on
- *                 long long len: Number of bits to turn on, starting from startbit
+ *  Inputs:        int64_t startbit: Starting bit to turn on
+ *                 int64_t len: Number of bits to turn on, starting from startbit
  *  Return values: None
  * 
  *  Author:        Alex Chow
  *  Date:          11/3/2011
  *
  *****************************************************************************/
-Bzet4::Bzet4(long long startbit, long long len) {
+Bzet4::Bzet4(int64_t startbit, int64_t len) {
     //intialize Bzet
     init();
     clear();
@@ -235,7 +229,7 @@ Bzet4::Bzet4(long long startbit, long long len) {
  *                 arbitrary input
  *
  *  Inputs:        void* data: Pointer to data to compress
- *                 long long size: Size of data in bytes
+ *                 int64_t size: Size of data in bytes
  *  Return values: None
  * 
  *  Author:        Alex Chow
@@ -251,7 +245,7 @@ Bzet4::Bzet4(void* data, int size) {
     if (data) {
         //retype data to pointer to bytes
         unsigned char* pData = (unsigned char*) data;
-        long long bitno = 0;
+        int64_t bitno = 0;
         for (int i = 0; i < size; ++i) {
             unsigned char c = pData[i];
             //set each bit if it's on
@@ -303,12 +297,13 @@ Bzet4::~Bzet4() {
  *****************************************************************************/
 void Bzet4::init() {
     m_bzet = (unsigned char*) malloc(INITIAL_ALLOC * sizeof(unsigned char));
-    m_step = (int*) malloc(INITIAL_ALLOC * sizeof(int));
+    m_step = (size_t*) malloc(INITIAL_ALLOC * sizeof(size_t));
     if (!m_bzet || !m_step) {
         fprintf(stderr, "Fatal error: Initial alloc failed attempting to allocate %d bytes\n", INITIAL_ALLOC);
         display_error("", true);
     }
 
+    m_size = 0;
     m_bufsize = INITIAL_ALLOC;
 }
 
@@ -366,23 +361,23 @@ Bzet4& Bzet4::operator=(const Bzet4& right) {
  *  Purpose:        Appends subtree starting at loc 
  *
  *  Inputs:         Bzet4& src: source to copy from
- *                  int loc: start of the subtree to append
+ *                  size_t loc: start of the subtree to append
  *  Return values:  None
  * 
  *  Author:         Alex Chow
  *  Date:           12/12/2011
  *
  *****************************************************************************/
- void Bzet4::appendSubtree(const Bzet4& src, int loc) {
-     int step = src.stepThrough(loc);
+ void Bzet4::appendSubtree(const Bzet4& src, size_t loc) {
+     size_t step = src.stepThrough(loc);
      if (step == -1) {
          printf("error at loc %d, step is %d\n", (int) loc, (int) step);
          return;
      }
 
      //get length to copy
-     int len = src.stepThrough(loc) - loc;
-     int old_size = m_size;
+     size_t len = src.stepThrough(loc) - loc;
+     size_t old_size = m_size;
 
      //resize bzet to accommodate new nodes
      resize(m_size + len);
@@ -391,7 +386,7 @@ Bzet4& Bzet4::operator=(const Bzet4& right) {
      memcpy(m_bzet + old_size, src.m_bzet + loc, len);
      
      //copy m_step
-     for (int i = 0; i < len; ++i) {
+     for (size_t i = 0; i < len; ++i) {
          m_step[old_size + i] = src.m_step[loc + i] - (loc - old_size);
 
 #if (defined _DEBUG || defined DEBUG) || _VERBOSE
@@ -407,7 +402,7 @@ Bzet4& Bzet4::operator=(const Bzet4& right) {
  *
  *  Purpose:        Drops the specified number of nodes starting from loc
  *
- *  Inputs:         int loc: location of first node to drop
+ *  Inputs:         size_t loc: location of first node to drop
  *                  int n: number of nodes to drop
  *                
  *  Return values:  None
@@ -416,18 +411,18 @@ Bzet4& Bzet4::operator=(const Bzet4& right) {
  *  Date:           12/12/2011
  *
  *****************************************************************************/
-void Bzet4::dropNodes(int loc, int n) {
+void Bzet4::dropNodes(size_t loc, int n) {
 #if (defined _DEBUG || defined DEBUG)
     assert(loc > 0 && loc < m_size && n >= 0);
 #endif
 
-    for (int i = loc; i < m_size - n; ++i) {
+    for (size_t i = loc; i < m_size - n; ++i) {
         m_bzet[i] = m_bzet[i + n];
         m_step[i] = m_step[i + n] - n;
     }
 
     //modify step in nodes before loc if needed
-    for (int i = HEADER_SIZE; i < loc; ++i)
+    for (size_t i = HEADER_SIZE; i < loc; ++i)
         if (m_step[i] > loc)
             m_step[i] -= n;
 
@@ -468,9 +463,9 @@ int Bzet4::do_data_op(OP op, int left_data_bit, int right_data_bit) {
  *  Inputs:        Bzet4 left: the left operand
  *                 Bzet4 right: the right operand
  *                 OP op: operation to do
- *                 int left_loc: current location in left
- *                 int right_loc: current locatin in right
- *                 int loc: current location in this bzet
+ *                 size_t left_loc: current location in left
+ *                 size_t right_loc: current locatin in right
+ *                 size_t loc: current location in this bzet
  *  Return values: NODETYPE: type of root node of built subtree (SATURATED, 
  *                           EMPTY, NORMAL)
  * 
@@ -478,7 +473,7 @@ int Bzet4::do_data_op(OP op, int left_data_bit, int right_data_bit) {
  *  Date:          12/11/2011
  *
  *****************************************************************************/
-NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, int left_loc, int right_loc, int loc) {
+NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, size_t left_loc, size_t right_loc, size_t loc) {
     //left_loc and right_loc are unmodified until an operation is done
     //so they both point to the corresponding nodes in left and right used to build the current node
     unsigned char c_left = left.m_bzet[left_loc];
@@ -600,7 +595,7 @@ NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, in
                     action = optable[(op << 2) + 1];
             }
 
-            int end;
+            size_t end;
             //execute action
             switch (action) {
                 //delete left subtree, set data bit off
@@ -799,15 +794,14 @@ Bzet4 Bzet4::binop(Bzet4& left, Bzet4& right, OP op) {
  *
  *  Purpose:       Bitwise OR operator
  *
- *  Inputs:        Bzet4& right: Right hand side of | operation
- *  Return values: value=*this | right
+ *  Inputs:        Bzet4& right: Right hand side of OR operation
+ *  Return values: Bitwise OR of this Bzet and right
  * 
- *  Author:        Trisha Liao
- *  Date:          11/05/2011
+ *  Author:        Alex Chow
+ *  Date:          4/10/2012
  *
  *****************************************************************************/
 Bzet4 Bzet4::operator|(const Bzet4& right) const {
-
     //this Bzet is empty
     if (empty()) {
         return right;
@@ -827,11 +821,11 @@ Bzet4 Bzet4::operator|(const Bzet4& right) const {
  *
  *  Purpose:       Bitwise AND operator
  *
- *  Inputs:        Bzet4& right: Right hand side of & operation
- *  Return values: result=*this & right
+ *  Inputs:        Bzet4& right: Right hand side of AND operation
+ *  Return values: Bitwise AND of this Bzet and right
  * 
- *  Author:        Trisha Liao
- *  Date:          11/01/2011
+ *  Author:        Alex Chow
+ *  Date:          4/10/2012
  *
  *****************************************************************************/
 Bzet4 Bzet4::operator&(const Bzet4& right) const {
@@ -852,13 +846,13 @@ Bzet4 Bzet4::operator&(const Bzet4& right) const {
  * 
  *  Function name: operator^
  *
- *  Purpose:       Bitwise ^ operator
+ *  Purpose:       Bitwise XOR operator
  *
- *  Inputs:        Bzet4& right: Right hand side of & operation
- *  Return values: result=*this ^ right
+ *  Inputs:        Bzet4& right: Right hand side of XOR operation
+ *  Return values: Bitwise XOR of this Bzet and right
  * 
- *  Author:        Trisha Liao
- *  Date:          11/05/2011
+ *  Author:        Alex Chow
+ *  Date:          4/10/2012
  *
  *****************************************************************************/
 Bzet4 Bzet4::operator^(const Bzet4& right) const {
@@ -915,14 +909,14 @@ bool Bzet4::operator==(const Bzet4& right) const {
  *  Date:          10/28/2011
  *
  *****************************************************************************/
-long long Bzet4::firstBit() const {
+int64_t Bzet4::firstBit() const {
     //empty Bzet
     if (m_size == 1)
         return -1;
 
     int level = m_bzet[0]; //current level in tree
-    long long bitBase = 0; //number of bits prior to the current node
-    int loc = 1; //location in Bzet
+    int64_t bitBase = 0; //number of bits prior to the current node
+    size_t loc = 1; //location in Bzet
 
     //just traverse the leftmost branch
     while (level) {
@@ -935,7 +929,7 @@ long long Bzet4::firstBit() const {
             if (c)
                 for (int i = 7; i >= 0; --i)
                     if ((c >> i) & 1)
-                        return bitBase + 7 - (long long) i;
+                        return bitBase + 7 - (int64_t) i;
 
             //if no data bit set in first 2 nodes, check next 2 nodes
             c = m_bzet[loc + 1];
@@ -990,14 +984,14 @@ long long Bzet4::firstBit() const {
  *  Date:          10/28/2011
  *
  *****************************************************************************/
-long long Bzet4::lastBit() const {
+int64_t Bzet4::lastBit() const {
     //empty Bzet
     if (size() == 1)
         return -1;
 
-    int loc = 1; //location in m_bzet (node)
+    size_t loc = 1; //location in m_bzet (node)
     int level = m_bzet[0]; //current level in tree, initialize to bzet depth
-    long long bitBase = 0; //number of bits prior to the current node
+    int64_t bitBase = 0; //number of bits prior to the current node
 
     do {
         //special calculation at level 1
@@ -1063,7 +1057,7 @@ long long Bzet4::lastBit() const {
             if ((tree_bits >> i) & 1) 
                 loc = stepThrough(loc);
 
-        bitBase += last_tree_bit * pow((double) NODE_ELS, level);
+        bitBase += last_tree_bit * pow4(level);
 
         //loc now points to location of the node corresponding to the last
         //tree bit, so repeat this process
@@ -1088,23 +1082,27 @@ long long Bzet4::lastBit() const {
  *  Date:          10/29/2011
  *
  *****************************************************************************/
-long long Bzet4::count() const {
+int64_t Bzet4::count() const {
     //empty bzet has 0
     if (empty())
         return 0;
 
-    long long bitCount = 0;
+    int64_t bitCount = 0;
 
     //go through each node
-    for (int i = HEADER_SIZE; i < m_size; ++i) {
+    for (size_t i = HEADER_SIZE; i < m_size; ++i) {
         int lev = depthAt(i);
+
+        if (lev < 1) {
+            printf("depth at %d is %d\n", (int) i, lev);
+        }
 
         //if lev is 1, all data bits have weight 1, do bit count on all 8 bits
         if (lev == 1) {
             unsigned char c = m_bzet[i];
             int num_bits = 0;
             for (int j = 0; j < 8; ++j) 
-                num_bits += (c >> j) & 1;
+                num_bits += ((c >> j) & 1);
             bitCount += num_bits;
         }
         //otherwise do weighted bit count on data bits only
@@ -1131,10 +1129,10 @@ long long Bzet4::count() const {
  *  Purpose:       Fills an array pointed to by bits with the locations of
  *                 each bit on in the Bzet
  *
- *  Inputs:        long long* bits: pointer to an array of bits
- *                 long long limit: max number of bits to record
+ *  Inputs:        int64_t* bits: pointer to an array of bits
+ *                 int64_t limit: max number of bits to record
  *                                default 0 means no limit
- *                 long long start: look for bits starting from this bit
+ *                 int64_t start: look for bits starting from this bit
  *                                default 0
  *  Return values: Number of elements of bits filled in
  *                 -1 if bzet is empty
@@ -1143,12 +1141,12 @@ long long Bzet4::count() const {
  *  Date:          10/31/2011
  *
  *****************************************************************************/
-long long Bzet4::getBits(long long* bits, long long limit, long long start) {
+int64_t Bzet4::getBits(int64_t* bits, int64_t limit, int64_t start) {
     if (empty())
         return -1;
 
     //counter for number of elements of bits filled in
-    long long bitcount = 0;
+    int64_t bitcount = 0;
 
     //set limit to number of bits on if unspecified
     if (!limit)
@@ -1159,7 +1157,7 @@ long long Bzet4::getBits(long long* bits, long long limit, long long start) {
 
     //if start is defined, move to the first bit that is after or equal to start
     if (start) {
-        long long bit = copy.firstBit();
+        int64_t bit = copy.firstBit();
         while (bit < start && bit != -1) {
             copy.unset(bit);
             bit = copy.firstBit();
@@ -1168,9 +1166,9 @@ long long Bzet4::getBits(long long* bits, long long limit, long long start) {
     
     //keep getting the location of the first bit
     //unset it after to move location of the first bit
-    for (long long i = 0; i < limit; ++i) {
+    for (int64_t i = 0; i < limit; ++i) {
         bits[i] = copy.firstBit();
-        copy.unset((long long) bits[i]);
+        copy.unset((int64_t) bits[i]);
         ++bitcount;
     }
 
@@ -1201,7 +1199,7 @@ bool Bzet4::empty() const {
  *
  *  Purpose:       Returns the value at the specified bit
  *
- *  Inputs:        long long bit: Location of target bit in the Bzet
+ *  Inputs:        int64_t bit: Location of target bit in the Bzet
  *  Return values: 0 if specified bit is out of range
  *                 Otherwise the value (1 or 0) of the specified bit
  * 
@@ -1209,9 +1207,9 @@ bool Bzet4::empty() const {
  *  Date:          10/23/2011
  *
  *****************************************************************************/
-bool Bzet4::at(long long bit) const {
+bool Bzet4::at(int64_t bit) const {
     //get number of bits this Bzet stores
-    long long totalBits = pow4(m_bzet[0] + 1);
+    int64_t totalBits = pow4(m_bzet[0] + 1);
 
     //if bit is out of range
     if (bit >= totalBits)
@@ -1226,22 +1224,22 @@ bool Bzet4::at(long long bit) const {
  *
  *  Purpose:       Sets a range of bits from start to (start + len - 1)
  *
- *  Inputs:        long long start: First bit to set
- *                 long long len: Number of bits to set, starting from start
+ *  Inputs:        int64_t start: First bit to set
+ *                 int64_t len: Number of bits to set, starting from start
  *  Return values: None
  * 
  *  Author:        Alex Chow
  *  Date:          11/3/2011
  *
  *****************************************************************************/
-void Bzet4::setRange(long long start, long long len) {
+void Bzet4::setRange(int64_t start, int64_t len) {
     //validate parameters
     if (start < 0 || len <= 0) {
         display_error("Bzet4::setRange: invalid start or len, doing nothing");
         return;
     }
 
-    for (long long i = start; i < start + len; ++i) {
+    for (int64_t i = start; i < start + len; ++i) {
         set(i);
     }
 }
@@ -1252,14 +1250,14 @@ void Bzet4::setRange(long long start, long long len) {
  *
  *  Purpose:       Sets specified bit within the Bzet to 1
  *
- *  Inputs:        long long bit: Location of target bit in the Bzet
+ *  Inputs:        int64_t bit: Location of target bit in the Bzet
  *  Return values: None
  * 
  *  Author:        Alex Chow
  *  Date:          10/23/2011
  *
  *****************************************************************************/
-void Bzet4::set(long long bit) {
+void Bzet4::set(int64_t bit) {
     //verify valid bit to set
     if (bit < 0) {
         display_error("Bzet4::set: invalid bit to set, doing nothing");
@@ -1275,14 +1273,14 @@ void Bzet4::set(long long bit) {
  *
  *  Purpose:       Sets specified bit within the Bzet to 0
  *
- *  Inputs:        long long bit: Location of target bit in the Bzet
+ *  Inputs:        int64_t bit: Location of target bit in the Bzet
  *  Return values: None
  * 
  *  Author:        Alex Chow
  *  Date:          10/25/2011
  *
  *****************************************************************************/
-void Bzet4::unset(long long bit) {
+void Bzet4::unset(int64_t bit) {
     //verify valid bit to unset
     if (bit < 0) {
         display_error("Bzet4::unset: invalid bit to unset, doing nothing");
@@ -1324,7 +1322,7 @@ int Bzet4::depth() const {
  *  Date:          10/23/2011
  *
  *****************************************************************************/
-long long Bzet4::size() const {
+size_t Bzet4::size() const {
     return m_size;
 }
 
@@ -1411,7 +1409,7 @@ int Bzet4::pow4(int x) {
         return powersof4[x];
 
     //otherwise calculate power
-    return pow((double) 4, x);
+    return (int) pow((double) 4, x);
 }
 
 /*****************************************************************************
@@ -1420,14 +1418,14 @@ int Bzet4::pow4(int x) {
  *
  *  Purpose:       Returns the depth of the Bzet tree needed to hold bit
  *
- *  Inputs:        long long bit: The bit that the Bzet needs to hold
+ *  Inputs:        int64_t bit: The bit that the Bzet needs to hold
  *  Return values: Tree depth needed to hold bit
  * 
  *  Author:        Alex Chow
  *  Date:          10/23/2011
  *
  *****************************************************************************/
-int Bzet4::buildDepth(long long bit) {
+int Bzet4::buildDepth(int64_t bit) {
     //invalid bit to build depth
     if (bit < 0)
         return -1;
@@ -1435,7 +1433,7 @@ int Bzet4::buildDepth(long long bit) {
     int newDepth = 1;
 
     while (bit > 15) {
-        bit /= (long long) NODE_ELS;
+        bit /= (int64_t) NODE_ELS;
         ++newDepth;
     }
 
@@ -1491,7 +1489,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
         b2.m_bzet[0] = b2.depth() + diffDepth;
 
         //shift Bzet to make room for extra nodes
-        for (int i = b2.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
+        for (size_t i = b2.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
             b2.m_bzet[i] = b2.m_bzet[i - diffDepth];
             b2.m_step[i] = b2.m_step[i - diffDepth] + diffDepth;
         }
@@ -1512,7 +1510,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
         b1.m_bzet[0] = b1.depth() + diffDepth;
 
         //shift Bzet to make room for extra nodes
-        for (int i = b1.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
+        for (size_t i = b1.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
             b1.m_bzet[i] = b1.m_bzet[i - diffDepth];
             b1.m_step[i] = b1.m_step[i - diffDepth] + diffDepth;
         }
@@ -1536,7 +1534,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
  *
  *  Purpose:       Returns what depth the byte (node) at loc is
  *
- *  Inputs:        int tLoc: target byte
+ *  Inputs:        size_t tLoc: target byte
  *  Return values: -1 if tLoc or curLoc are out of range
  *                 otherwise depth of node at loc
  * 
@@ -1544,7 +1542,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
  *  Date:          10/28/2011
  *
  *****************************************************************************/
-int Bzet4::depthAt(int tLoc) const {
+int Bzet4::depthAt(size_t tLoc) const {
     //check if out of range
     if (tLoc > size())
         return -1;
@@ -1554,18 +1552,17 @@ int Bzet4::depthAt(int tLoc) const {
         return depth();
 
     int cdepth = depth() - 1;
-
-    int nextLoc = 2;
+    size_t nextLoc = 2;
     while (true) {
         //found target
         if (nextLoc == tLoc)
             return cdepth;
 
         //special handling for level 1 data
-        if (cdepth == 1 && nextLoc - tLoc <= 1)
-            return cdepth;
+        if (cdepth == 1 && (int) nextLoc - (int) tLoc <= 1)
+            return 1;
 
-        long long next = stepThrough(nextLoc, cdepth);
+        size_t next = stepThrough(nextLoc);
         //check leftmost nodes
         if (next > tLoc) {
             nextLoc++;
@@ -1586,7 +1583,7 @@ int Bzet4::depthAt(int tLoc) const {
  *  Purpose:       Returns the location of the next node after walking through
  *                 the subtree starting at loc
  *
- *  Inputs:        int loc: location of starting node of target subtree
+ *  Inputs:        size_t loc: location of starting node of target subtree
  *  Return values: -1 if loc is out of valid range (1 to m_size - 1)
  *                 otherwise the location of the next node after walking
  *                 through the subtree starting at loc
@@ -1595,7 +1592,7 @@ int Bzet4::depthAt(int tLoc) const {
  *  Date:          10/28/2011
  *
  *****************************************************************************/
-int Bzet4::stepThrough(int loc, int depth) const {
+size_t Bzet4::stepThrough(size_t loc) const {
     //make sure loc is in range
     if (loc <= 0 || loc >= m_size)
         return -1;
@@ -1609,14 +1606,15 @@ int Bzet4::stepThrough(int loc, int depth) const {
  *
  *  Purpose:       Does a bitwise not of the subtree starting at loc
  *
- *  Inputs:        int loc: location of starting node of target subtree
+ *  Inputs:        size_t loc: location of starting node of target subtree
+ *                 int depth: depth of the node at loc
  *  Return values: None
  * 
  *  Author:        Alex Chow
  *  Date:          11/21/2011
  *
  *****************************************************************************/
-void Bzet4::subtreeNot(int loc, int depth) {
+void Bzet4::subtreeNot(size_t loc, int depth) {
     if (loc == 0 || loc >= m_size)
         return;
 
@@ -1636,7 +1634,7 @@ void Bzet4::subtreeNot(int loc, int depth) {
         return;
     }
 
-    int nextLoc = loc + 1;
+    size_t nextLoc = loc + 1;
 
     //decrement depth
     --depth;
@@ -1676,7 +1674,7 @@ void Bzet4::subtreeNot(int loc, int depth) {
  *                                default is 0
  *                 FILE* target: file descriptor to print to
  *                               default is stdout
- *                 int loc: location within the Bzet to print, used during recursion
+ *                 size_t loc: location within the Bzet to print, used during recursion
  *                          default is 1 (first node)
  *                 int offset: offset in tree levels, used during recursion
  *                             default is 0
@@ -1688,7 +1686,7 @@ void Bzet4::subtreeNot(int loc, int depth) {
  *  Date:          10/26/2011
  *
  *****************************************************************************/
-void Bzet4::_printBzet(int stdOffset, FILE* target, int loc, int depth, int offset, bool pad) const {
+void Bzet4::_printBzet(int stdOffset, FILE* target, size_t loc, int depth, int offset, bool pad) const {
     //print level info
     if (loc == 1) {
         fprintf(target, "%.2XL", m_bzet[0]);
@@ -1760,12 +1758,12 @@ void Bzet4::_printBzet(int stdOffset, FILE* target, int loc, int depth, int offs
  *  Date:          10/23/2011
  *
  *****************************************************************************/
-void Bzet4::resize(int size) {
+void Bzet4::resize(size_t size) {
     if (size > m_bufsize) {
         while (size > m_bufsize)
             m_bufsize *= RESIZE_SCALE;
         m_bzet = (unsigned char*) realloc(m_bzet, m_bufsize * sizeof(unsigned char));
-        m_step = (int*) realloc(m_step, m_bufsize * sizeof(int));
+        m_step = (size_t*) realloc(m_step, m_bufsize * sizeof(size_t));
         if (!m_bzet || !m_step) {
             fprintf(stderr, "Fatal error: Resizing bzet failed attempting to allocate %d bytes\n", (int) size);
             display_error("", true);
@@ -1829,6 +1827,6 @@ void Bzet4::loadBzet(void* bzet_literal, int size) {
         resize(size);
         memcpy(m_bzet, bzet_literal, size);
     } else {
-        display_error("Bzet4::loadBzet(void*, long long): null pointer, doing nothing");
+        display_error("Bzet4::loadBzet(void*, int64_t): null pointer, doing nothing");
     }
 }
