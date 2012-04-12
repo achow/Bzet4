@@ -225,6 +225,54 @@ Bzet4::Bzet4(int64_t startbit, int64_t len) {
  * 
  *  Function name: Bzet4
  *
+ *  Purpose:       Constructor for Bzet4. Allows for Bzet compression of a
+ *                 specified file.
+ *
+ *  Inputs:        const char* filename: file to compress
+ *  Return values: None
+ * 
+ *  Author:        Alex Chow
+ *  Date:          4/10/2012
+ *
+ *****************************************************************************/
+Bzet4::Bzet4(const char* filename) {
+    //initialize Bzet
+    init();
+    clear();
+
+    //open file
+    FILE* f = fopen(filename, "r");
+
+    if (f) {
+        //retrieve file size
+        fseek(f, 0, SEEK_END);
+        int64_t filesize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+
+        //aligned size
+        int64_t alignedSize = ((filesize & 1) ? filesize : filesize + 1);
+        int64_t alignedSizeBits = alignedSize * 8;
+        int depth = buildDepth(alignedSizeBits - 1);
+
+        //initial size, counting level 1 nodes
+        int64_t bytesreqd = alignedSize / 2;
+        alignedSize = alignedSize / 2;
+
+        //each level up, there will be a factor of 4 fewer bytes required
+        while (alignedSize > NODE_ELS) {
+
+        }
+    }
+
+#if (defined _DEBUG || defined DEBUG)
+    validateBzet();
+#endif
+}
+
+/*****************************************************************************
+ * 
+ *  Function name: Bzet4
+ *
  *  Purpose:       Constructor for Bzet4. Allows for creation of a Bzet from
  *                 arbitrary input
  *
@@ -1093,10 +1141,6 @@ int64_t Bzet4::count() const {
     for (size_t i = HEADER_SIZE; i < m_size; ++i) {
         int lev = depthAt(i);
 
-        if (lev < 1) {
-            printf("depth at %d is %d\n", (int) i, lev);
-        }
-
         //if lev is 1, all data bits have weight 1, do bit count on all 8 bits
         if (lev == 1) {
             unsigned char c = m_bzet[i];
@@ -1403,7 +1447,7 @@ void Bzet4::printBzet(int stdOffset, FILE* target) const {
  *  Date:          10/26/2011
  *
  *****************************************************************************/
-int Bzet4::pow4(int x) {
+size_t Bzet4::pow4(int x) {
     //reference table for powers of less than 10
     if (x < 10)
         return powersof4[x];
@@ -1439,7 +1483,6 @@ int Bzet4::buildDepth(int64_t bit) {
 
     return newDepth;
 }
-
 
 /*****************************************************************************
  * 

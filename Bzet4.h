@@ -19,6 +19,7 @@ class Bzet4 {
         Bzet4(const Bzet4& src);
         Bzet4(int64_t bit);
         Bzet4(int64_t startbit, int64_t len);
+        Bzet4(const char* filename);
         Bzet4(void* data, int size);
         ~Bzet4();
 
@@ -61,7 +62,7 @@ class Bzet4 {
 
     private:
         void display_error(char* message, bool fatal = false, FILE* output = stderr) const;
-        static int pow4(int x);
+        static size_t pow4(int x);
         static int buildDepth(int64_t size);
         static unsigned char dust(unsigned char x);
         int depthAt(size_t loc) const;
