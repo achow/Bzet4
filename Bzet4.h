@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define INITIAL_ALLOC 1024
+
 typedef long long int64_t;
 
 enum OP { 
@@ -85,7 +87,7 @@ class Bzet4 {
         size_t m_bufsize;
         size_t m_size; //actual size of m_bzet in bytes
         unsigned char* m_bzet; //points to the bzet
-        size_t* m_step; //points to an array that holds stepThrough values
+        unsigned char* m_step; //points to an array that holds stepThrough values
 };
 
 inline
@@ -96,6 +98,32 @@ void Bzet4::display_error(char* message, bool fatal, FILE* output) const {
 #endif
     if (fatal)
         exit(1);
+}
+
+/*****************************************************************************
+ * 
+ *  Function name: init
+ *
+ *  Purpose:       Common initialization upon object instantiation
+ *
+ *  Inputs:        None
+ *  Return values: None
+ * 
+ *  Author:        Alex Chow
+ *  Date:          12/14/2011
+ *
+ *****************************************************************************/
+inline 
+void Bzet4::init() {
+    m_bzet = (unsigned char*) malloc(INITIAL_ALLOC * sizeof(unsigned char));
+    m_step = (unsigned char*) malloc(INITIAL_ALLOC * sizeof(unsigned char));
+    if (!m_bzet || !m_step) {
+        fprintf(stderr, "Fatal error: Initial alloc failed attempting to allocate %d bytes\n", INITIAL_ALLOC);
+        display_error("", true);
+    }
+
+    m_size = 0;
+    m_bufsize = INITIAL_ALLOC;
 }
 
 #if (defined _DEBUG || defined DEBUG)

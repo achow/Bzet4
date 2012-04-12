@@ -6,7 +6,9 @@
 
 #define NODE_ELS 4
 #define HEADER_SIZE 1
+#ifndef INITIAL_ALLOC
 #define INITIAL_ALLOC 1024
+#endif
 #define RESIZE_SCALE 2
 
 const int Bzet4::powersof4[10] = { 1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144 };
@@ -58,7 +60,7 @@ void Bzet4::validateBzet(size_t loc, int lev) {
     if (!check)
         printf("assert failed at loc = %d, lev = %d\n", (int) loc, lev);
     assert(check);
-    
+    /*
     for (int i = 1; i < m_size; ++i) {
         bool test = (m_step[i] > 0 && m_step[i] <= m_size);
         if (!test) {
@@ -66,7 +68,7 @@ void Bzet4::validateBzet(size_t loc, int lev) {
             dump();
         }
         assert(test);
-    }
+    }*/
 }
 
 void Bzet4::dump() const {
@@ -83,6 +85,9 @@ void Bzet4::dump() const {
         if (x % 10 == 0)
             printf("\n");
         printf("%5d", (int) m_step[i]);
+        if (m_step[i] == 2 && m_step[i + 1] != 1) {
+            printf("\n | invalid step at %d | \n", i);
+        }
         x++;
     }
     printf("\n");
@@ -185,8 +190,10 @@ Bzet4::Bzet4(int64_t bit) {
     }
 
     //set m_step
+    //no need to check m_size <= 255 to make sure m_step values doesn't overflow
+    //since it would never happen
     for (int i = HEADER_SIZE; i < m_size; ++i)
-        m_step[i] = m_size;
+        m_step[i] = (unsigned char) m_size - i;
 
 #if (defined _DEBUG || defined DEBUG)
     validateBzet();
@@ -332,31 +339,6 @@ Bzet4::~Bzet4() {
 
 /*****************************************************************************
  * 
- *  Function name: init
- *
- *  Purpose:       Common initialization upon object instantiation
- *
- *  Inputs:        None
- *  Return values: None
- * 
- *  Author:        Alex Chow
- *  Date:          12/14/2011
- *
- *****************************************************************************/
-void Bzet4::init() {
-    m_bzet = (unsigned char*) malloc(INITIAL_ALLOC * sizeof(unsigned char));
-    m_step = (size_t*) malloc(INITIAL_ALLOC * sizeof(size_t));
-    if (!m_bzet || !m_step) {
-        fprintf(stderr, "Fatal error: Initial alloc failed attempting to allocate %d bytes\n", INITIAL_ALLOC);
-        display_error("", true);
-    }
-
-    m_size = 0;
-    m_bufsize = INITIAL_ALLOC;
-}
-
-/*****************************************************************************
- * 
  *  Function name: operator=
  *
  *  Purpose:       Assignment operator
@@ -434,14 +416,14 @@ Bzet4& Bzet4::operator=(const Bzet4& right) {
      memcpy(m_bzet + old_size, src.m_bzet + loc, len);
      
      //copy m_step
-     for (size_t i = 0; i < len; ++i) {
-         m_step[old_size + i] = src.m_step[loc + i] - (loc - old_size);
+     memcpy(m_step + old_size, src.m_step + loc, len);
+     //for (size_t i = 0; i < len; ++i) {
+     //    m_step[old_size + i] = src.m_step[loc + i] - (loc - old_size);
 
 #if (defined _DEBUG || defined DEBUG) || _VERBOSE
          //assert(m_step[old_size + i] > 0);
 #endif
 
-     }
 }
 
 /*****************************************************************************
@@ -466,13 +448,8 @@ void Bzet4::dropNodes(size_t loc, int n) {
 
     for (size_t i = loc; i < m_size - n; ++i) {
         m_bzet[i] = m_bzet[i + n];
-        m_step[i] = m_step[i + n] - n;
+        m_step[i] = m_step[i + n];
     }
-
-    //modify step in nodes before loc if needed
-    for (size_t i = HEADER_SIZE; i < loc; ++i)
-        if (m_step[i] > loc)
-            m_step[i] -= n;
 
     resize(m_size - n);
 
@@ -555,7 +532,7 @@ NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, si
                 resize(2);
                 m_bzet[0]++;
                 m_bzet[1] = 0x80;
-                m_step[1] = 2;
+                m_step[1] = 1;
                 return NORMAL;
             }
 
@@ -581,8 +558,8 @@ NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, si
         m_bzet[loc + 1] = result_c2;
 
         //set steps
-        m_step[loc] = loc + 2;
-        m_step[loc + 1] = loc + 2;
+        m_step[loc] = 2;
+        m_step[loc + 1] = 1;
         
         return NORMAL;
     }
@@ -761,7 +738,10 @@ NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, si
     }
 
     //set step
-    m_step[loc] = m_size;
+    if (m_size - loc > 255)
+        m_step[loc] = 0;
+    else 
+        m_step[loc] = m_size - loc;
 
     if (m_bzet[loc] == 0x00) {
         //build bzet manually if bzet is empty
@@ -778,7 +758,7 @@ NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, si
             resize(2);
             m_bzet[0]++;
             m_bzet[1] = 0x80;
-            m_step[1] = 2;
+            m_step[1] = 1;
             return NORMAL;
         }
 
@@ -815,6 +795,16 @@ NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, si
 Bzet4 Bzet4::binop(Bzet4& left, Bzet4& right, OP op) {
     //align bzets
     align(left, right);
+
+    /*
+#if (defined _DEBUG || defined DEBUG)
+    printf("---START ALIGN---\n");
+    left.dump();
+    right.dump();
+    printf("---END ALIGN---\n");
+#endif
+    */
+
     Bzet4 result;
 
     //set level byte
@@ -1534,13 +1524,16 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
         //shift Bzet to make room for extra nodes
         for (size_t i = b2.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
             b2.m_bzet[i] = b2.m_bzet[i - diffDepth];
-            b2.m_step[i] = b2.m_step[i - diffDepth] + diffDepth;
+            b2.m_step[i] = b2.m_step[i - diffDepth];
         }
 
         //fill in extra nodes
         for (int i = 0; i < diffDepth; ++i) {
             b2.m_bzet[HEADER_SIZE + i] = 0x08;
-            b2.m_step[HEADER_SIZE + i] = b2.m_size;
+            if ((size_t) b2.m_step[diffDepth + 1] + (diffDepth - i) >= 255)
+                b2.m_step[HEADER_SIZE + i] = 0;
+            else
+                b2.m_step[HEADER_SIZE + i] = b2.m_step[diffDepth + 1] + (diffDepth - i);
         }
     } else { //b2 is bigger
         //change sign of diffDepth
@@ -1555,13 +1548,16 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
         //shift Bzet to make room for extra nodes
         for (size_t i = b1.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
             b1.m_bzet[i] = b1.m_bzet[i - diffDepth];
-            b1.m_step[i] = b1.m_step[i - diffDepth] + diffDepth;
+            b1.m_step[i] = b1.m_step[i - diffDepth];
         }
 
         //fill in extra nodes
         for (int i = 0; i < diffDepth; ++i) {
             b1.m_bzet[HEADER_SIZE + i] = 0x08;
-            b1.m_step[HEADER_SIZE + i] = b1.m_size;
+            if ((size_t) b1.m_step[diffDepth + 1] + (diffDepth - i) >= 255)
+                b1.m_step[HEADER_SIZE + i] = 0;
+            else
+                b1.m_step[HEADER_SIZE + i] = b1.m_step[diffDepth + 1] + (diffDepth - i);
         }
     }
 
@@ -1594,8 +1590,8 @@ int Bzet4::depthAt(size_t tLoc) const {
     if (tLoc == 1)
         return depth();
 
-    int cdepth = depth() - 1;
-    size_t nextLoc = 2;
+    int cdepth = depth();
+    size_t nextLoc = 1;
     while (true) {
         //found target
         if (nextLoc == tLoc)
@@ -1640,7 +1636,22 @@ size_t Bzet4::stepThrough(size_t loc) const {
     if (loc <= 0 || loc >= m_size)
         return -1;
 
-    return m_step[loc];
+    //retrieve the offset of the end of the subtree at loc
+    unsigned char loc_offset = m_step[loc];
+
+    //if the offset is 0, the offset is too large to be actually stored
+    //compute it by using the subtrees stemming from this node
+    if (loc_offset == 0) {
+        unsigned char tree_bits = m_bzet[loc] & 0xF;
+        loc++;
+        for (int i = NODE_ELS - 1; i >= 0; i--) {
+            if ((tree_bits >> i) & 1)
+                loc = stepThrough(loc);
+        }
+        return loc;
+    }
+
+    return loc + m_step[loc];
 }
 
 /*****************************************************************************
@@ -1806,7 +1817,7 @@ void Bzet4::resize(size_t size) {
         while (size > m_bufsize)
             m_bufsize *= RESIZE_SCALE;
         m_bzet = (unsigned char*) realloc(m_bzet, m_bufsize * sizeof(unsigned char));
-        m_step = (size_t*) realloc(m_step, m_bufsize * sizeof(size_t));
+        m_step = (unsigned char*) realloc(m_step, m_bufsize * sizeof(unsigned char));
         if (!m_bzet || !m_step) {
             fprintf(stderr, "Fatal error: Resizing bzet failed attempting to allocate %d bytes\n", (int) size);
             display_error("", true);
@@ -1843,7 +1854,6 @@ void Bzet4::normalize() {
     //if there are leading 0x08 nodes, get rid of them
     if (i) {
         //drop i nodes from the beginning
-        m_step[1] = m_size;
         dropNodes(1, i);
 
         //change depth accordingly
