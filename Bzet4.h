@@ -21,7 +21,7 @@ class Bzet4 {
         Bzet4(const Bzet4& src);
         Bzet4(int64_t bit);
         Bzet4(int64_t startbit, int64_t len);
-        Bzet4(const char* filename);
+        //Bzet4(const char* filename);
         Bzet4(void* data, int size);
         ~Bzet4();
 
