@@ -374,14 +374,14 @@ Bzet4& Bzet4::operator=(const Bzet4& right) {
  *****************************************************************************/
 Bzet4 Bzet4::operator~() const {
     //clone bzet and NOT in place
-    Bzet4 not(*this);
-    not.subtreeNot(1, (int) m_bzet[0]);
+    Bzet4 bnot(*this);
+    bnot.subtreeNot(1, (int) m_bzet[0]);
 
 #if (defined _DEBUG || defined DEBUG)
-    not.validateBzet();
+    bnot.validateBzet();
 #endif
 
-    return not;
+    return bnot;
 }
 
 /*****************************************************************************
