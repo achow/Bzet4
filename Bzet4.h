@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #define INITIAL_ALLOC 1024
+#define BZET Bzet4
 
 typedef long long int64_t;
 
