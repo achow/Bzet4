@@ -28,9 +28,9 @@ class Bzet4 {
 
         Bzet4& operator=(const Bzet4& right);
         Bzet4 operator~() const;
-        Bzet4 operator|(const Bzet4& right) const;
-		Bzet4 operator&(const Bzet4& right) const;
-		Bzet4 operator^(const Bzet4& right) const;
+        Bzet4 operator|(Bzet4& right);
+		Bzet4 operator&(Bzet4& right);
+		Bzet4 operator^(Bzet4& right);
 		bool operator==(const Bzet4& right) const;
 
         static Bzet4 binop(Bzet4& left, Bzet4& right, OP op);
@@ -75,7 +75,7 @@ class Bzet4 {
         void resize(size_t size);
         void loadBzet(void* bzet_literal, int size);
 
-        NODETYPE _binop(const Bzet4& left, const Bzet4& right, OP op, int lev, size_t left_loc = 1, size_t right_loc = 1, size_t loc = 1);
+        NODETYPE _binop(Bzet4& left, Bzet4& right, OP op, int lev, size_t left_loc = 1, size_t right_loc = 1, size_t loc = 1);
         void appendSubtree(const Bzet4& src, size_t loc);
         static int do_data_op(OP op, int left_data_bit, int right_data_bit);
         void dropNodes(size_t loc, int n);

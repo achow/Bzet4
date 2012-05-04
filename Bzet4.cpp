@@ -193,7 +193,7 @@ Bzet4::Bzet4(int64_t bit) {
     //no need to check m_size <= 255 to make sure m_step values doesn't overflow
     //since it would never happen (4^255 ~ 10^153)
     for (int i = HEADER_SIZE; i < m_size; ++i)
-        m_step[i] = (unsigned char) m_size - i;
+        m_step[i] = (unsigned char) (m_size - i);
 
 #if (defined _DEBUG || defined DEBUG)
     validateBzet();
@@ -399,8 +399,6 @@ Bzet4 Bzet4::operator~() const {
  *
  *****************************************************************************/
  void Bzet4::appendSubtree(const Bzet4& src, size_t loc) {
-     size_t step = src.stepThrough(loc);
-
      //get length to copy
      size_t len = src.stepThrough(loc) - loc;
      size_t old_size = m_size;
@@ -485,7 +483,7 @@ int Bzet4::do_data_op(OP op, int left_data_bit, int right_data_bit) {
  *  Date:          12/11/2011
  *
  *****************************************************************************/
-NODETYPE Bzet4::_binop(const Bzet4& left, const Bzet4& right, OP op, int lev, size_t left_loc, size_t right_loc, size_t loc) {
+NODETYPE Bzet4::_binop(Bzet4& left, Bzet4& right, OP op, int lev, size_t left_loc, size_t right_loc, size_t loc) {
     //left_loc and right_loc are unmodified until an operation is done
     //so they both point to the corresponding nodes in left and right used to build the current node
     unsigned char c_left = left.m_bzet[left_loc];
@@ -824,7 +822,7 @@ Bzet4 Bzet4::binop(Bzet4& left, Bzet4& right, OP op) {
  *  Date:          4/10/2012
  *
  *****************************************************************************/
-Bzet4 Bzet4::operator|(const Bzet4& right) const {
+Bzet4 Bzet4::operator|(Bzet4& right){
     //this Bzet is empty
     if (empty()) {
         return right;
@@ -835,7 +833,7 @@ Bzet4 Bzet4::operator|(const Bzet4& right) const {
         return *this;
     }
 
-    return binop(Bzet4(*this), Bzet4(right), OR);
+    return binop(*this, right, OR);
 }
 
 /*****************************************************************************
@@ -851,7 +849,7 @@ Bzet4 Bzet4::operator|(const Bzet4& right) const {
  *  Date:          4/10/2012
  *
  *****************************************************************************/
-Bzet4 Bzet4::operator&(const Bzet4& right) const {
+Bzet4 Bzet4::operator&(Bzet4& right) {
     //this Bzet is empty
     if (empty()) {
         return *this;
@@ -862,7 +860,7 @@ Bzet4 Bzet4::operator&(const Bzet4& right) const {
         return right;
     }
 
-    return binop(Bzet4(*this), Bzet4(right), AND);
+    return binop(*this, right, AND);
 }
 
 /*****************************************************************************
@@ -878,7 +876,7 @@ Bzet4 Bzet4::operator&(const Bzet4& right) const {
  *  Date:          4/10/2012
  *
  *****************************************************************************/
-Bzet4 Bzet4::operator^(const Bzet4& right) const {
+Bzet4 Bzet4::operator^(Bzet4& right) {
     //if the left Bzet is empty
     if (empty()) {
         return right;
@@ -889,7 +887,7 @@ Bzet4 Bzet4::operator^(const Bzet4& right) const {
         return *this;
     }
 
-    return binop(Bzet4(*this), Bzet4(right), XOR);
+    return binop(*this, right, XOR);
 }
 
 /*****************************************************************************
@@ -1233,7 +1231,8 @@ bool Bzet4::at(int64_t bit) const {
     if (bit >= totalBits)
         return 0;
 
-    return !((*this) & Bzet4(bit)).empty();
+    Bzet4 temp(bit);
+    return !(*((Bzet4 *) this) & temp).empty();
 }
 
 /*****************************************************************************
@@ -1283,7 +1282,8 @@ void Bzet4::set(int64_t bit) {
     }
 
     //OR the bit in
-    *this = *this | Bzet4(bit);
+    Bzet4 temp(bit);
+    *this = *this | temp;
 }
 
 /*****************************************************************************
@@ -1308,7 +1308,8 @@ void Bzet4::unset(int64_t bit) {
 
     Bzet4 b(bit);
     align(*this, b);
-    *this = *this & ~b;
+    Bzet4 nb(~b);
+    *this = *this & nb;
 }
 
 /*****************************************************************************
@@ -1506,7 +1507,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
         b2.resize(b2.size() + diffDepth);
 
         //modify b2 depth
-        b2.m_bzet[0] = b2.depth() + diffDepth;
+        b2.m_bzet[0] = (unsigned char) (b2.depth() + diffDepth);
 
         //shift Bzet to make room for extra nodes
         for (size_t i = b2.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
@@ -1522,7 +1523,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
             if ((size_t) b2.m_step[diffDepth + 1] + (diffDepth - i) >= 255)
                 b2.m_step[HEADER_SIZE + i] = 0;
             else
-                b2.m_step[HEADER_SIZE + i] = b2.m_step[diffDepth + 1] + (diffDepth - i);
+                b2.m_step[HEADER_SIZE + i] = (unsigned char) (b2.m_step[diffDepth + 1] + (diffDepth - i));
         }
     } 
     //b2 is bigger
@@ -1534,7 +1535,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
         b1.resize(b1.size() + diffDepth);
 
         //modify b1 depth
-        b1.m_bzet[0] = b1.depth() + diffDepth;
+        b1.m_bzet[0] = (unsigned char) (b1.depth() + diffDepth);
 
         //shift Bzet to make room for extra nodes
         for (size_t i = b1.size() - 1; i >= HEADER_SIZE + diffDepth; --i) {
@@ -1550,7 +1551,7 @@ void Bzet4::align(Bzet4& b1, Bzet4& b2) {
             if ((size_t) b1.m_step[diffDepth + 1] + (diffDepth - i) >= 255)
                 b1.m_step[HEADER_SIZE + i] = 0;
             else
-                b1.m_step[HEADER_SIZE + i] = b1.m_step[diffDepth + 1] + (diffDepth - i);
+                b1.m_step[HEADER_SIZE + i] = (unsigned char) (b1.m_step[diffDepth + 1] + (diffDepth - i));
         }
     }
 
@@ -1630,7 +1631,7 @@ int Bzet4::depthAt(size_t tLoc) const {
 size_t Bzet4::stepThrough(size_t loc) const {
     //make sure loc is in range
     if (loc <= 0 || loc >= m_size)
-        return -1;
+        return (size_t) -1;
 
     //retrieve the offset of the end of the subtree at loc
     unsigned char loc_offset = m_step[loc];
@@ -1866,7 +1867,7 @@ void Bzet4::normalize() {
         dropNodes(1, i);
 
         //change depth accordingly
-        m_bzet[0] -= i;
+        m_bzet[0] -= (unsigned char) i;
     }
 }
 
